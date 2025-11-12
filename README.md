@@ -17,6 +17,29 @@ Türbin rig testleri için optimal test matrisi oluşturan Python programı. CFD
 pip install -r requirements.txt
 ```
 
+## 🚀 Hızlı Başlangıç (Tek Tıkla)
+
+### Windows
+```bash
+start.bat
+```
+Dosyayı çift tıklayın, her şey otomatik başlar!
+
+### Linux/macOS
+```bash
+./start.sh
+```
+
+### Python ile Manuel
+```bash
+python run_app.py
+```
+
+Otomatik olarak:
+- Flask API başlar (port 5000)
+- Web sunucusu başlar (port 8080)
+- Tarayıcı açılır
+
 ## Kullanım
 
 ### 1. CFD Verilerinizi Hazırlayın
