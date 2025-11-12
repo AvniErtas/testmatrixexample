@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turbine Test Matrix Optimizer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .step {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+
+        .step:hover {
+            border-color: #667eea;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.1);
+        }
+
+        .step-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .step-number {
+            background: #667eea;
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+
+        .step-title {
+            font-size: 1.3em;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        input[type="number"],
+        input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        input[type="number"]:focus,
+        input[type="file"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results {
+            display: none;
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .results.active {
+            display: block;
+        }
+
+        .result-card {
+            background: white;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .result-card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .stat-item {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .download-btn {
+            background: #28a745;
+            margin-right: 10px;
+            margin-top: 10px;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .preview-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 0.9em;
+        }
+
+        .preview-table th,
+        .preview-table td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        .preview-table th {
+            background: #667eea;
+            color: white;
+        }
+
+        .preview-table tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+
+        #visualization {
+            width: 100%;
+            margin-top: 15px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Turbine Test Matrix Optimizer</h1>
+            <p>Optimal test matrisi oluşturun - Minimum rake, maksimum kapsama</p>
+        </div>
+
+        <div class="content">
+            <!-- Step 1: CFD Data Upload -->
+            <div class="step" id="step1">
+                <div class="step-header">
+                    <div class="step-number">1</div>
+                    <div class="step-title">CFD Verilerini Yükleyin</div>
+                </div>
+                <div class="form-group">
+                    <label for="cfdFile">Excel Dosyası (RPM, PressureRatio, Swirl sütunları)</label>
+                    <input type="file" id="cfdFile" accept=".xlsx,.xls">
+                </div>
+                <button onclick="uploadFile()">Dosyayı Yükle</button>
+
+                <div id="filePreview" style="margin-top: 20px;"></div>
+            </div>
+
+            <!-- Step 2: Configuration -->
+            <div class="step" id="step2" style="opacity: 0.5; pointer-events: none;">
+                <div class="step-header">
+                    <div class="step-number">2</div>
+                    <div class="step-title">Test Parametrelerini Ayarlayın</div>
+                </div>
+
+                <div class="grid">
+                    <div class="form-group">
+                        <label for="ptInlet">pt_inlet [kPa]</label>
+                        <input type="number" id="ptInlet" value="150" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label for="testMargin">test_margin [kPa]</label>
+                        <input type="number" id="testMargin" value="10" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label for="ambient">ambient [kPa]</label>
+                        <input type="number" id="ambient" value="101.325" step="0.001">
+                    </div>
+                </div>
+
+                <div class="grid">
+                    <div class="form-group">
+                        <label for="rakeAccuracy">Rake Accuracy [°]</label>
+                        <input type="number" id="rakeAccuracy" value="10" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label for="rakeMargin">Rake Margin [%]</label>
+                        <input type="number" id="rakeMargin" value="10" step="1">
+                    </div>
+                </div>
+
+                <div class="alert alert-success" id="pcriticalDisplay" style="display: none;">
+                    <strong>P_critical:</strong> <span id="pcriticalValue">-</span>
+                </div>
+
+                <button onclick="calculatePCritical()">P_critical Hesapla</button>
+                <button onclick="optimizeMatrix()" style="margin-left: 10px;">Test Matrisi Oluştur</button>
+            </div>
+
+            <!-- Loading -->
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Test matrisi oluşturuluyor, lütfen bekleyin...</p>
+            </div>
+
+            <!-- Results -->
+            <div class="results" id="results">
+                <div class="result-card">
+                    <h3>Optimizasyon Sonuçları</h3>
+                    <div class="stat-grid" id="statsGrid"></div>
+                </div>
+
+                <div class="result-card">
+                    <h3>📊 Detaylı Rake Test Planı</h3>
+                    <p style="margin-bottom: 10px; color: #666;">Her rake pozisyonu için taranacak RPM ve basınç oranları</p>
+                    <img id="testPlanVisualization" src="" alt="Rake Test Plan" style="width: 100%; border-radius: 8px;">
+                </div>
+
+                <div class="result-card">
+                    <h3>📈 Genel Görselleştirme</h3>
+                    <img id="visualization" src="" alt="Test Matrix Visualization">
+                </div>
+
+                <div class="result-card">
+                    <h3>📋 Rake Pozisyonları Tablosu</h3>
+                    <div id="rakeTable"></div>
+                </div>
+
+                <div class="result-card">
+                    <h3>💾 İndirme</h3>
+                    <button class="download-btn" onclick="downloadExcel()">📄 Excel İndir</button>
+                    <button class="download-btn" onclick="downloadTestPlan()">📊 Test Planı İndir</button>
+                    <button class="download-btn" onclick="downloadVisualization()">📈 Genel Görsel İndir</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://spoken-enrollment-tubes-air.trycloudflare.com';
+        let fileId = null;
+        let resultId = null;
+        let vizId = null;
+        let testPlanId = null;
+
+        async function uploadFile() {
+            const fileInput = document.getElementById('cfdFile');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert('Lütfen bir dosya seçin!');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch(`${API_URL}/api/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    fileId = data.file_id;
+
+                    // Preview göster
+                    const previewDiv = document.getElementById('filePreview');
+                    previewDiv.innerHTML = `
+                        <div class="alert alert-success">
+                            <strong>✓ Dosya yüklendi:</strong> ${data.filename}
+                            <br><strong>Toplam nokta:</strong> ${data.stats.total_points}
+                            <br><strong>RPM aralığı:</strong> ${data.stats.rpm_range[0]} - ${data.stats.rpm_range[1]}
+                            <br><strong>Swirl aralığı:</strong> ${data.stats.swirl_range[0]}° - ${data.stats.swirl_range[1]}°
+                        </div>
+                        <table class="preview-table">
+                            <thead>
+                                <tr>
+                                    ${data.stats.columns.map(col => `<th>${col}</th>`).join('')}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.preview.map(row => `
+                                    <tr>
+                                        ${data.stats.columns.map(col => `<td>${row[col]}</td>`).join('')}
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+
+                    // Step 2'yi aktif et
+                    const step2 = document.getElementById('step2');
+                    step2.style.opacity = '1';
+                    step2.style.pointerEvents = 'auto';
+                } else {
+                    alert('Hata: ' + data.error);
+                }
+            } catch (error) {
+                alert('Yükleme hatası: ' + error.message);
+            }
+        }
+
+        async function calculatePCritical() {
+            const ptInlet = parseFloat(document.getElementById('ptInlet').value);
+            const testMargin = parseFloat(document.getElementById('testMargin').value);
+            const ambient = parseFloat(document.getElementById('ambient').value);
+
+            try {
+                const response = await fetch(`${API_URL}/api/calculate-pcritical`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ pt_inlet: ptInlet, test_margin: testMargin, ambient: ambient })
+                });
+
+                const data = await response.json();
+
+                document.getElementById('pcriticalDisplay').style.display = 'block';
+                document.getElementById('pcriticalValue').textContent = data.p_critical;
+            } catch (error) {
+                alert('Hesaplama hatası: ' + error.message);
+            }
+        }
+
+        async function optimizeMatrix() {
+            if (!fileId) {
+                alert('Lütfen önce CFD verilerini yükleyin!');
+                return;
+            }
+
+            const ptInlet = parseFloat(document.getElementById('ptInlet').value);
+            const testMargin = parseFloat(document.getElementById('testMargin').value);
+            const ambient = parseFloat(document.getElementById('ambient').value);
+            const rakeAccuracy = parseFloat(document.getElementById('rakeAccuracy').value);
+            const rakeMargin = parseFloat(document.getElementById('rakeMargin').value);
+
+            document.getElementById('loading').classList.add('active');
+
+            try {
+                const response = await fetch(`${API_URL}/api/optimize`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        file_id: fileId,
+                        pt_inlet: ptInlet,
+                        test_margin: testMargin,
+                        ambient: ambient,
+                        rake_accuracy: rakeAccuracy,
+                        rake_margin_percent: rakeMargin
+                    })
+                });
+
+                const data = await response.json();
+                document.getElementById('loading').classList.remove('active');
+
+                if (response.ok) {
+                    resultId = data.result_id;
+                    vizId = data.visualization_id;
+                    testPlanId = data.test_plan_id;
+                    displayResults(data);
+                } else {
+                    alert('Optimizasyon hatası: ' + data.error);
+                }
+            } catch (error) {
+                document.getElementById('loading').classList.remove('active');
+                alert('Hata: ' + error.message);
+            }
+        }
+
+        function displayResults(data) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.classList.add('active');
+
+            // İstatistikler
+            const statsGrid = document.getElementById('statsGrid');
+            statsGrid.innerHTML = `
+                <div class="stat-item">
+                    <div class="stat-value">${data.summary.total_rakes}</div>
+                    <div class="stat-label">Toplam Rake</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">${data.summary.vacuum_off_rakes}</div>
+                    <div class="stat-label">Vakum Kapalı</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">${data.summary.vacuum_on_rakes}</div>
+                    <div class="stat-label">Vakum Açık</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">${data.summary.total_points}</div>
+                    <div class="stat-label">Test Noktası</div>
+                </div>
+            `;
+
+            // Görselleştirmeler
+            document.getElementById('testPlanVisualization').src = `${API_URL}/api/download/${testPlanId}`;
+            document.getElementById('visualization').src = `${API_URL}/api/download/${vizId}`;
+
+            // Rake tablosu
+            const rakeTable = document.getElementById('rakeTable');
+            rakeTable.innerHTML = `
+                <table class="preview-table">
+                    <thead>
+                        <tr>
+                            <th>Sıra</th>
+                            <th>Rake Açısı [°]</th>
+                            <th>Vakum</th>
+                            <th>Kapsanan Nokta</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.rake_positions.map(rake => `
+                            <tr>
+                                <td>${rake.sequence}</td>
+                                <td>${rake.angle.toFixed(1)}</td>
+                                <td>${rake.vacuum_required}</td>
+                                <td>${rake.points_covered}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+
+            resultsDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function downloadExcel() {
+            if (resultId) {
+                window.open(`${API_URL}/api/download/${resultId}`, '_blank');
+            }
+        }
+
+        function downloadVisualization() {
+            if (vizId) {
+                window.open(`${API_URL}/api/download/${vizId}`, '_blank');
+            }
+        }
+
+        function downloadTestPlan() {
+            if (testPlanId) {
+                window.open(`${API_URL}/api/download/${testPlanId}`, '_blank');
+            }
+        }
+
+        // Sayfa yüklendiğinde demo dosyayı otomatik yükle
+        async function loadDemoFile() {
+            try {
+                // Real data dosyayı fetch ile al
+                const response = await fetch('real_cfd_data.xlsx');
+                const blob = await response.blob();
+                const file = new File([blob], 'real_cfd_data.xlsx', {
+                    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                });
+
+                // FormData oluştur ve yükle
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const uploadResponse = await fetch(`${API_URL}/api/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await uploadResponse.json();
+
+                if (uploadResponse.ok) {
+                    fileId = data.file_id;
+
+                    // Preview göster
+                    const previewDiv = document.getElementById('filePreview');
+                    previewDiv.innerHTML = `
+                        <div class="alert alert-success">
+                            <strong>✓ Gerçek veri otomatik yüklendi:</strong> ${data.filename}
+                            <br><strong>Toplam nokta:</strong> ${data.stats.total_points}
+                            <br><strong>RPM aralığı:</strong> ${data.stats.rpm_range[0]} - ${data.stats.rpm_range[1]}
+                            <br><strong>Swirl aralığı:</strong> ${data.stats.swirl_range[0]}° - ${data.stats.swirl_range[1]}°
+                            <br><br><em>💡 İsterseniz kendi dosyanızı yükleyebilirsiniz</em>
+                        </div>
+                        <table class="preview-table">
+                            <thead>
+                                <tr>
+                                    ${data.stats.columns.map(col => `<th>${col}</th>`).join('')}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.preview.map(row => `
+                                    <tr>
+                                        ${data.stats.columns.map(col => `<td>${row[col]}</td>`).join('')}
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+
+                    // Step 2'yi aktif et
+                    const step2 = document.getElementById('step2');
+                    step2.style.opacity = '1';
+                    step2.style.pointerEvents = 'auto';
+
+                    console.log('✓ Real data otomatik yüklendi');
+                }
+            } catch (error) {
+                console.log('Real data yüklenemedi:', error.message);
+                // Hata gösterme - kullanıcı manuel yükleyebilir
+            }
+        }
+
+        // Sayfa yüklenince çalıştır
+        window.addEventListener('DOMContentLoaded', loadDemoFile);
+    </script>
+</body>
+</html>
